@@ -55,18 +55,57 @@
             gap: 1.5rem;
             align-items: center;
         }
+        .header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .header-logo {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #7c3aed, #3b82f6);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
+            animation: fadeInUp 0.6s ease-out;
+        }
+        .header-logo svg {
+            width: 32px;
+            height: 32px;
+            color: #fff;
+        }
         h1 { 
             font-size: 2.5rem; 
             font-weight: 700; 
             text-align: center; 
-            margin-bottom: 0.5rem; 
+            margin-bottom: 0; 
             color: var(--text);
+            background: linear-gradient(135deg, #f0f0ff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
         }
-        p { 
-            margin: 0 0 1rem; 
+        @media (prefers-color-scheme: light) {
+            h1 {
+                background: linear-gradient(135deg, #4f46e5, #7c3aed);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+        }
+        .subtitle { 
+            margin: 0; 
             color: var(--muted); 
             text-align: center;
             font-size: 1.1rem;
+            font-weight: 400;
+            max-width: 480px;
+            line-height: 1.6;
         }
         .card {
             background: rgba(255, 255, 255, 0.15); /* Semi-transparent background */
@@ -279,6 +318,9 @@
         /* Responsive adjustments */
         @media (max-width: 768px) {
             h1 { font-size: 1.8rem; }
+            .header-logo { width: 44px; height: 44px; }
+            .header-logo svg { width: 24px; height: 24px; }
+            .subtitle { font-size: 0.95rem; }
             .card { padding: 1.5rem; }
             #dropZone { padding: 2rem 1rem; min-height: 140px; }
             #dropZone p { font-size: 1rem; }
@@ -290,6 +332,9 @@
         }
         @media (max-width: 480px) {
             h1 { font-size: 1.4rem; }
+            .header-logo { width: 36px; height: 36px; }
+            .header-logo svg { width: 20px; height: 20px; }
+            .subtitle { font-size: 0.85rem; }
             .card { padding: 1rem; border-radius: 12px; }
             #dropZone { padding: 1.5rem 0.8rem; min-height: 120px; }
             #dropZone .icon { width: 40px; height: 40px; }
@@ -303,13 +348,13 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .card {
+            animation: fadeInUp 0.6s ease-out 0.15s both;
+        }
+        .header {
             animation: fadeInUp 0.6s ease-out;
         }
-        h1 {
+        .subtitle {
             animation: fadeInUp 0.6s ease-out 0.1s both;
-        }
-        .container > p {
-            animation: fadeInUp 0.6s ease-out 0.2s both;
         }
         footer {
             animation: fadeInUp 0.6s ease-out 0.3s both;
@@ -317,9 +362,15 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🖼️ Convertisseur HEIC → JPEG</h1>
-        <p>Convertissez vos images HEIC/HEIF en JPEG directement dans votre navigateur</p>
+    <div class="container">        <div class="header">
+            <div class="header-logo">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                </svg>
+            </div>
+            <h1>Convertisseur HEIC → JPEG</h1>
+            <p class="subtitle">Convertissez vos images HEIC en JPEG directement dans votre navigateur.</p>
+        </div>
         
         <div class="card">
             <div id="dropZone">

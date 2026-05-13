@@ -7,7 +7,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker@latest/coi-serviceworker.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
     <style>
@@ -504,14 +503,8 @@
             console.error('Erreur chargement FFmpeg:', err);
             
             let errorMsg = 'Impossible de charger FFmpeg: ' + err.message;
-            
-            if (err.name === 'SecurityError' || err.message.includes('origin') || err.message.includes('SharedArrayBuffer')) {
-                errorMsg = "⚠️ Restriction de sécurité navigateur détectée. <br><br>Bien que j'aie utilisé une version compatible, votre navigateur bloque peut-être encore les fonctions avancées en mode local. <br><br>Solution : Utilisez un serveur local (ex: extension 'Live Server' sur VS Code).";
-                statusEl.innerHTML = '⚠️ Problème de sécurité local.';
-            } else {
-                statusEl.innerHTML = '⚠️ Échec du chargement. <button onclick="location.reload()" style="background:#7c3aed;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:8px;">Réessayer</button>';
-            }
-            
+            console.error(err);
+            statusEl.innerHTML = '⚠️ Échec du chargement. <button onclick="location.reload()" style="background:#7c3aed;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:8px;">Réessayer</button>';
             showError(errorMsg);
         }
     }

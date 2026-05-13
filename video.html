@@ -1,862 +1,108 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Convertisseur Vidéo</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --primary: #8b5cf6;
-            --primary-dark: #7c3aed;
-            --accent: #ec4899;
-            --text: #fff;
-            --muted: rgba(255, 255, 255, 0.7);
-        }
-        @media (prefers-color-scheme: light) {
-            :root {
-                --text: #1e293b;
-                --muted: rgba(30, 41, 59, 0.6);
-            }
-            body {
-                background: linear-gradient(135deg, #fce7f3, #e0e7ff, #c4b5fd);
-            }
-            .card {
-                background: rgba(255, 255, 255, 0.4);
-                border: 1px solid rgba(255, 255, 255, 0.5);
-            }
-            #dropZone p { color: rgba(30, 41, 59, 0.8); }
-            #dropZone .icon { color: rgba(30, 41, 59, 0.6); }
-            .controls label { color: rgba(30, 41, 59, 0.8); }
-            .thumb .name { color: rgba(30, 41, 59, 0.8); }
-            .toggle-btn { color: rgba(30, 41, 59, 0.7); }
-            .toggle-btn.selected { color: #fff; }
-            footer { color: rgba(30, 41, 59, 0.6); }
-            .info-msg { color: rgba(30, 41, 59, 0.7); }
-        }
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #1e1b4b, #312e81, #581c87);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 2rem 1rem;
-        }
-        .container { 
-            max-width: 960px; 
-            width: 100%; 
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            align-items: center;
-        }
-        .header {
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        .header-logo {
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, #ec4899, #8b5cf6);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 8px 24px rgba(236, 72, 153, 0.35);
-            animation: fadeInUp 0.6s ease-out;
-        }
-        .header-logo svg {
-            width: 32px;
-            height: 32px;
-            color: #fff;
-        }
-        h1 { 
-            font-size: 2.5rem; 
-            font-weight: 700; 
-            text-align: center; 
-            margin-bottom: 0; 
-            color: var(--text);
-            background: linear-gradient(135deg, #fbcfe8, #c4b5fd);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.02em;
-        }
-        @media (prefers-color-scheme: light) {
-            h1 {
-                background: linear-gradient(135deg, #db2777, #7c3aed);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
-            }
-        }
-        .subtitle { 
-            margin: 0; 
-            color: var(--muted); 
-            text-align: center;
-            font-size: 1.1rem;
-            font-weight: 400;
-            max-width: 520px;
-            line-height: 1.6;
-        }
-        .card {
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 16px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            padding: 2.5rem;
-            width: 100%;
-        }
-        #dropZone {
-            border: 2px dashed rgba(255, 255, 255, 0.4);
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 3rem 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            min-height: 180px;
-        }
-        #dropZone:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.6);
-        }
-        #dropZone.dragover {
-            background: rgba(139, 92, 246, 0.15);
-            border-color: var(--primary);
-        }
-        #dropZone input { display: none; }
-        #dropZone .icon { 
-            width: 60px; 
-            height: 60px; 
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 0.5rem;
-        }
-        #dropZone p { 
-            color: rgba(255, 255, 255, 0.8);
-            margin-bottom: 0;
-            font-size: 1.2rem;
-            font-weight: 500;
-        }
-        .info-msg {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin-top: 0.25rem;
-        }
-        .gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-        .thumb {
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            overflow: hidden;
-            position: relative;
-            text-align: center;
-            padding: 0.75rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .thumb:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-        }
-        .thumb video { 
-            max-width: 100%; 
-            max-height: 100px; 
-            display: block; 
-            margin: 0 auto 0.5rem; 
-            border-radius: 6px;
-            object-fit: cover;
-            background: #000;
-        }
-        .thumb .name { 
-            font-size: 0.8rem; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis;
-            color: rgba(255, 255, 255, 0.8);
-        }
-        .thumb .meta {
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.5);
-            margin-top: 0.2rem;
-        }
-        .thumb .status { 
-            font-size: 0.75rem; 
-            margin-top: 0.5rem;
-            font-weight: 500;
-        }
-        .thumb .status.success { color: #4ade80; }
-        .thumb .status.error { color: #f87171; }
-        .thumb .status.processing { color: #fbbf24; }
-        .thumb a {
-            position: absolute;
-            right: 6px;
-            top: 6px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            text-decoration: none;
-            background: rgba(0,0,0,0.4);
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: background 0.2s;
-        }
-        .thumb a:hover {
-            background: rgba(0,0,0,0.7);
-        }
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.2rem;
-            align-items: center;
-            margin-top: 1.5rem;
-        }
-        .controls label {
-            color: rgba(255, 255, 255, 0.8);
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-        .format {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-        .slider { flex: 1 1 200px; position: relative; }
-        .slider input { width: 100%; -webkit-appearance: none; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; outline: none; }
-        .slider input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #ec4899; cursor: pointer; box-shadow: 0 0 2px rgba(0,0,0,0.5); }
-        .slider input::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #ec4899; cursor: pointer; border: none; }
-        .slider .badge { position: absolute; top: -28px; right: 0; background: #ec4899; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
-        button {
-            background: var(--primary);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 0.7rem 1.4rem;
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-        button:hover { 
-            background: var(--primary-dark); 
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
-        }
-        button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3);
-        }
-        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-        button.danger {
-            background: #ef4444;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-        }
-        button.danger:hover {
-            background: #dc2626;
-            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
-        }
-        .toggle-group {
-            display: inline-flex;
-            gap: 0.3rem;
-            background: rgba(255,255,255,0.1);
-            padding: 0.3rem;
-            border-radius: 8px;
-            flex-wrap: wrap;
-        }
-        .toggle-btn {
-            background: transparent;
-            border: none;
-            color: rgba(255,255,255,0.8);
-            padding: 0.4rem 0.7rem;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.2s, color 0.2s;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        .toggle-btn.selected {
-            background: #ec4899;
-            color: #fff;
-        }
-        .progress {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            overflow: hidden;
-            height: 10px;
-            margin-top: 1rem;
-        }
-        .progress div {
-            height: 100%;
-            background: linear-gradient(90deg, #ec4899, #8b5cf6);
-            width: 0;
-            transition: width 0.4s ease;
-            border-radius: 10px;
-        }
-        .error-box {
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1rem;
-            color: #fca5a5;
-            display: none;
-            backdrop-filter: blur(4px);
-        }
-        .ffmpeg-loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            padding: 0.75rem;
-            background: rgba(255,255,255,0.08);
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.8);
-        }
-        .ffmpeg-loading .spinner {
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.2);
-            border-top-color: #ec4899;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        footer {
-            text-align: center;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-top: 2rem;
-        }
-
-        @media (max-width: 768px) {
-            h1 { font-size: 1.8rem; }
-            .header-logo { width: 44px; height: 44px; }
-            .header-logo svg { width: 24px; height: 24px; }
-            .subtitle { font-size: 0.95rem; }
-            .card { padding: 1.5rem; }
-            #dropZone { padding: 2rem 1rem; min-height: 140px; }
-            #dropZone p { font-size: 1rem; }
-            .controls { flex-direction: column; align-items: stretch; }
-            .slider { flex: 1 1 auto; }
-            .format { justify-content: center; }
-            button { justify-content: center; }
-            .gallery { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-        }
-        @media (max-width: 480px) {
-            h1 { font-size: 1.4rem; }
-            .header-logo { width: 36px; height: 36px; }
-            .header-logo svg { width: 20px; height: 20px; }
-            .subtitle { font-size: 0.85rem; }
-            .card { padding: 1rem; border-radius: 12px; }
-            #dropZone { padding: 1.5rem 0.8rem; min-height: 120px; }
-            #dropZone .icon { width: 40px; height: 40px; }
-            .gallery { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.6rem; }
-            .thumb { padding: 0.5rem; }
-            .toggle-btn { font-size: 0.75rem; padding: 0.3rem 0.5rem; }
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .card {
-            animation: fadeInUp 0.6s ease-out 0.15s both;
-        }
-        .header {
-            animation: fadeInUp 0.6s ease-out;
-        }
-        .subtitle {
-            animation: fadeInUp 0.6s ease-out 0.1s both;
-        }
-        footer {
-            animation: fadeInUp 0.6s ease-out 0.3s both;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Convertisseur Vidéo</title>
+  <!-- Utilisation de ffmpeg v0.9.5 (Mono-thread, compatible Safari/Brave/GitHub Pages) -->
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.9.5/dist/ffmpeg.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1e1b4b, #312e81, #581c87);
+      padding: 40px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      backdrop-filter: blur(10px);
+      text-align: center;
+    }
+    h1 { margin-bottom: 20px; }
+    #dropZone {
+      border: 2px dashed rgba(255,255,255,0.3);
+      padding: 40px;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 15px 30px;
+      background: #8b5cf6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+    button:disabled { background: #666; }
+    #status { margin-top: 20px; color: #fbbf24; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="header-logo">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
-                </svg>
-            </div>
-            <h1>Convertisseur Vidéo</h1>
-            <p class="subtitle">Convertissez vos vidéos dans tous les formats directement dans votre navigateur. Aucun fichier n'est envoyé sur un serveur.</p>
-        </div>
-        
-        <div class="card">
-            <div id="ffmpegStatus" class="ffmpeg-loading">
-                <div class="spinner"></div>
-                <span>Chargement de FFmpeg...</span>
-            </div>
-
-            <div id="dropZone">
-                <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-1.5-9.75l-3.75-3.75M12 18.75V4.5m0 0L7.5 9.75m4.5-5.25z" />
-                </svg>
-                <p>Glissez-déposez vos vidéos ici ou <strong>cliquez</strong> pour les sélectionner</p>
-                <p class="info-msg">Formats supportés : MP4, WebM, AVI, MOV, MKV, FLV, WMV, OGG, GIF</p>
-                <input type="file" id="fileInput" accept="video/mp4,video/webm,video/avi,video/quicktime,video/x-matroska,video/x-flv,video/x-ms-wmv,video/ogg,image/gif" multiple>
-            </div>
-            
-            <div id="errorBox" class="error-box"></div>
-            <div class="gallery" id="gallery"></div>
-            
-            <div class="controls">
-                <div class="format">
-                    <label>Format sortie:</label>
-                    <div class="toggle-group" id="formatToggle">
-                        <button type="button" class="toggle-btn selected" data-value="mp4">MP4</button>
-                        <button type="button" class="toggle-btn" data-value="webm">WebM</button>
-                        <button type="button" class="toggle-btn" data-value="avi">AVI</button>
-                        <button type="button" class="toggle-btn" data-value="mov">MOV</button>
-                        <button type="button" class="toggle-btn" data-value="mkv">MKV</button>
-                        <button type="button" class="toggle-btn" data-value="gif">GIF</button>
-                    </div>
-                </div>
-                <div class="slider">
-                    <label for="quality">Qualité (CRF): <span id="qualityVal">23</span></label>
-                    <input type="range" id="quality" min="0" max="51" value="23">
-                    <div class="badge" id="qualityBadge">23</div>
-                </div>
-                <button id="convertBtn" disabled>🎬 Convertir</button>
-                <button id="downloadAllBtn" disabled>📦 ZIP</button>
-                <button id="clearBtn" class="danger">🗑️ Tout effacer</button>
-            </div>
-            
-            <div class="progress" id="progressBar"><div></div></div>
-        </div>
-        
-        <footer>© 2026 • Conversion 100% locale dans votre navigateur • Propulsé par FFmpeg.wasm</footer>
+  <div class="container">
+    <h1>🎬 Convertisseur Vidéo</h1>
+    <div id="dropZone">
+      <p>Cliquez pour sélectionner une vidéo</p>
+      <input type="file" id="fileInput" accept="video/*" style="display:none">
     </div>
+    <button id="convertBtn" disabled>Convertir en MP4</button>
+    <div id="status"></div>
+  </div>
 
-    <script>
-    const $ = id => document.getElementById(id);
-    let files = [], previews = [];
-    let selectedFormat = 'mp4';
-    let ffmpeg = null;
-    let ffmpegLoaded = false;
+  <script>
+    const { createFFmpeg, fetchFile } = FFmpeg;
+    const ffmpeg = createFFmpeg({ log: true });
+    let file = null;
 
-    // --- FFmpeg.wasm loading (v0.11.6 compatibility) ---
-    async function loadFFmpeg() {
-        const statusEl = $('ffmpegStatus');
-        try {
-            statusEl.innerHTML = '⏳ Initialisation de FFmpeg...';
-            
-            const { createFFmpeg, fetchFile } = FFmpeg;
-            
-            // Create FFmpeg instance (Multi-threaded version enabled by coi-serviceworker)
-            ffmpeg = createFFmpeg({ 
-                log: true,
-                corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
-            });
-            
-            ffmpeg.setProgress(({ ratio }) => {
-                updateProgress(ratio);
-            });
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const convertBtn = document.getElementById('convertBtn');
+    const status = document.getElementById('status');
 
-            // Handle logging if needed
-            ffmpeg.setLogger(({ message }) => {
-                console.log('FFmpeg:', message);
-            });
+    dropZone.onclick = () => fileInput.click();
+    fileInput.onchange = (e) => {
+      file = e.target.files[0];
+      status.textContent = 'Fichier chargé : ' + file.name;
+      convertBtn.disabled = false;
+    };
 
-            statusEl.innerHTML = '⏳ Téléchargement du moteur...';
-            await ffmpeg.load();
-
-            ffmpegLoaded = true;
-            statusEl.style.display = 'none';
-            console.log('FFmpeg v0.11.6 chargé avec succès');
-        } catch (err) {
-            console.error('Erreur chargement FFmpeg:', err);
-            
-            let errorMsg = 'Impossible de charger FFmpeg: ' + err.message;
-            console.error(err);
-            statusEl.innerHTML = '⚠️ Échec du chargement. <button onclick="location.reload()" style="background:#7c3aed;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:8px;">Réessayer</button>';
-            showError(errorMsg);
-        }
-    }
-
-    loadFFmpeg();
-
-    // --- Drag & Drop ---
-    const dropZone = $('dropZone');
-    const fileInput = $('fileInput');
-
-    dropZone.addEventListener('click', () => fileInput.click());
-
-    function onDragOver(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.dataTransfer.dropEffect = 'copy';
-        dropZone.classList.add('dragover');
-    }
-    
-    function onDragEnter(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.dataTransfer.dropEffect = 'copy';
-        dropZone.classList.add('dragover');
-    }
-    
-    function onDragLeave(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!dropZone.contains(e.relatedTarget)) {
-            dropZone.classList.remove('dragover');
-        }
-    }
-    
-    function onDrop(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZone.classList.remove('dragover');
-        const droppedFiles = e.dataTransfer.files;
-        if (droppedFiles && droppedFiles.length > 0) {
-            handleFiles(droppedFiles);
-        }
-    }
-    
-    dropZone.addEventListener('dragenter', onDragEnter, false);
-    dropZone.addEventListener('dragover', onDragOver, false);
-    dropZone.addEventListener('dragleave', onDragLeave, false);
-    dropZone.addEventListener('drop', onDrop, false);
-    
-    window.addEventListener('dragenter', e => { e.preventDefault(); }, false);
-    window.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }, false);
-    window.addEventListener('drop', e => { e.preventDefault(); }, false);
-    
-    fileInput.addEventListener('change', () => handleFiles(fileInput.files));
-
-    // Format toggle
-    document.querySelectorAll('.toggle-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            selectedFormat = btn.dataset.value;
-        });
-    });
-
-    // Quality slider
-    $('quality').addEventListener('input', e => {
-        const val = e.target.value;
-        $('qualityVal').textContent = val;
-        $('qualityBadge').textContent = val;
-    });
-
-    // Clear button
-    $('clearBtn').addEventListener('click', () => {
-        previews.forEach(p => {
-            if (p.url) URL.revokeObjectURL(p.url);
-            if (p.outputUrl) URL.revokeObjectURL(p.outputUrl);
-        });
-        files = [];
-        previews = [];
-        $('gallery').innerHTML = '';
-        updateUI();
-        $('progressBar').firstElementChild.style.width = '0%';
-    });
-
-    function showError(msg) {
-        const box = $('errorBox');
-        box.textContent = msg;
-        box.style.display = 'block';
-        setTimeout(() => { box.style.display = 'none'; }, 6000);
-    }
-
-    const VIDEO_EXTENSIONS = /\.(mp4|webm|avi|mov|mkv|flv|wmv|ogg|ogv|gif)$/i;
-
-    function handleFiles(list) {
-        const arr = Array.from(list);
-        const videos = arr.filter(f => VIDEO_EXTENSIONS.test(f.name));
-        if (videos.length === 0) {
-            showError('❌ Aucun fichier vidéo reconnu. Formats supportés: MP4, WebM, AVI, MOV, MKV, FLV, WMV, OGG, GIF');
-            return;
-        }
-        if (videos.length !== arr.length) {
-            alert('⚠️ Certains fichiers ne sont pas des vidéos reconnues et seront ignorés.');
-        }
-        videos.forEach(addFile);
-        updateUI();
-    }
-
-    function addFile(file) {
-        if (files.some(f => f.name === file.name && f.size === file.size)) return;
-        files.push(file);
-        const url = URL.createObjectURL(file);
-        
-        const div = document.createElement('div');
-        div.className = 'thumb';
-        
-        const video = document.createElement('video');
-        video.src = url;
-        video.muted = true;
-        video.preload = 'metadata';
-        video.addEventListener('loadedmetadata', () => {
-            meta.textContent = formatDuration(video.duration) + ' • ' + formatSize(file.size);
-        });
-        
-        const name = document.createElement('div');
-        name.className = 'name';
-        name.title = file.name;
-        name.textContent = file.name.slice(0, 20) + (file.name.length > 20 ? '...' : '');
-        
-        const meta = document.createElement('div');
-        meta.className = 'meta';
-        meta.textContent = 'Chargement...';
-        
-        const status = document.createElement('div');
-        status.className = 'status';
-        status.textContent = '⏳ En attente...';
-        
-        div.appendChild(video);
-        div.appendChild(name);
-        div.appendChild(meta);
-        div.appendChild(status);
-        $('gallery').appendChild(div);
-        
-        previews.push({ file, url, element: div, statusEl: status, metaEl: meta, blob: null, outputUrl: null });
-    }
-
-    function formatDuration(seconds) {
-        if (!seconds || !isFinite(seconds)) return '??:??';
-        const m = Math.floor(seconds / 60);
-        const s = Math.floor(seconds % 60);
-        return `${m}:${s.toString().padStart(2, '0')}`;
-    }
-
-    function formatSize(bytes) {
-        if (!bytes) return '?';
-        const units = ['o', 'Ko', 'Mo', 'Go'];
-        let i = 0;
-        let size = bytes;
-        while (size >= 1024 && i < units.length - 1) {
-            size /= 1024;
-            i++;
-        }
-        return size.toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
-    }
-
-    function getCodecAndOpts(format, crf) {
-        switch (format) {
-            case 'mp4':
-                return { codec: 'libx264', ext: 'mp4', mime: 'video/mp4', opts: ['-crf', String(crf), '-preset', 'medium'] };
-            case 'webm':
-                return { codec: 'libvpx-vp9', ext: 'webm', mime: 'video/webm', opts: ['-crf', String(Math.round(crf * 0.6)), '-b:v', '0', '-cpu-used', '2'] };
-            case 'avi':
-                return { codec: 'libx264', ext: 'avi', mime: 'video/x-msvideo', opts: ['-crf', String(crf), '-preset', 'medium'] };
-            case 'mov':
-                return { codec: 'libx264', ext: 'mov', mime: 'video/quicktime', opts: ['-crf', String(crf), '-preset', 'medium'] };
-            case 'mkv':
-                return { codec: 'libx264', ext: 'mkv', mime: 'video/x-matroska', opts: ['-crf', String(crf), '-preset', 'medium'] };
-            case 'gif':
-                return { codec: 'gif', ext: 'gif', mime: 'image/gif', opts: [] };
-            default:
-                return { codec: 'libx264', ext: 'mp4', mime: 'video/mp4', opts: ['-crf', String(crf), '-preset', 'medium'] };
-        }
-    }
-
-    $('convertBtn').addEventListener('click', async () => {
-        if (!files.length) return;
-        if (!ffmpegLoaded) {
-            showError('⏳ FFmpeg n\'est pas encore chargé. Veuillez patienter...');
-            return;
-        }
-        setProcessing(true);
-        const crf = parseInt($('quality').value);
-        let done = 0;
-
-        for (const item of previews) {
-            const { file, statusEl, element } = item;
-            try {
-                statusEl.textContent = '⏳ Conversion...';
-                statusEl.className = 'status processing';
-
-                const cfg = getCodecAndOpts(selectedFormat, crf);
-                const inputName = 'input_' + done + '_' + file.name;
-                const outputName = 'output_' + done + '.' + cfg.ext;
-
-                // Read file into FFmpeg (v0.11 API)
-                const fileData = await file.arrayBuffer();
-                ffmpeg.FS('writeFile', inputName, new Uint8Array(fileData));
-
-                // Run conversion (v0.11 API)
-                // For GIF, add palette generation for better quality
-                if (selectedFormat === 'gif') {
-                    const paletteName = 'palette_' + done + '.png';
-                    await ffmpeg.run('-i', inputName, '-vf', 'fps=10,scale=320:-1:flags=lanczos,palettegen', '-y', paletteName);
-                    await ffmpeg.run('-i', inputName, '-i', paletteName, '-lavfi', 'fps=10,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse', '-y', outputName);
-                } else {
-                    await ffmpeg.run('-i', inputName, '-c:v', cfg.codec, ...cfg.opts, '-y', outputName);
-                }
-
-                // Read output (v0.11 API)
-                const outputData = ffmpeg.FS('readFile', outputName);
-                const blob = new Blob([outputData.buffer], { type: cfg.mime });
-                
-                // Cleanup FFmpeg files (v0.11 API)
-                ffmpeg.FS('unlink', inputName);
-                ffmpeg.FS('unlink', outputName);
-                if (selectedFormat === 'gif') {
-                    ffmpeg.FS('unlink', 'palette_' + done + '.png');
-                }
-
-                item.blob = blob;
-                if (item.outputUrl) URL.revokeObjectURL(item.outputUrl);
-                item.outputUrl = URL.createObjectURL(blob);
-
-                // Update preview
-                const videoEl = element.querySelector('video');
-                videoEl.src = item.outputUrl;
-                videoEl.loop = selectedFormat === 'gif';
-
-                // Add download button
-                const existingDl = element.querySelector('a');
-                if (existingDl) existingDl.remove();
-                
-                const dl = document.createElement('a');
-                dl.href = item.outputUrl;
-                dl.download = file.name.replace(/\.[^.]+$/, '.' + cfg.ext);
-                dl.textContent = '⬇️';
-                dl.title = 'Télécharger';
-                element.appendChild(dl);
-
-                statusEl.textContent = '✅ OK';
-                statusEl.className = 'status success';
-            } catch (err) {
-                console.error('Erreur conversion:', err);
-                statusEl.textContent = '❌ Erreur';
-                statusEl.className = 'status error';
-                showError(`Erreur sur "${file.name}": ${err.message}`);
-            }
-            done++;
-            updateProgress(done / files.length);
-        }
-        setProcessing(false);
-    });
-
-    $('downloadAllBtn').addEventListener('click', async () => {
-        if (!files.length) return;
-        setProcessing(true);
-        const crf = parseInt($('quality').value);
-        const zip = new JSZip();
-        let done = 0, hasBlob = false;
-
-        for (const item of previews) {
-            const { file, statusEl } = item;
-            try {
-                if (!item.blob) {
-                    statusEl.textContent = '⏳ Conv...';
-                    statusEl.className = 'status processing';
-
-                    if (!ffmpegLoaded) throw new Error('FFmpeg pas encore chargé');
-
-                    const cfg = getCodecAndOpts(selectedFormat, crf);
-                    const inputName = 'zip_input_' + done + '_' + file.name;
-                    const outputName = 'zip_output_' + done + '.' + cfg.ext;
-
-                    const fileData = await file.arrayBuffer();
-                    ffmpeg.FS('writeFile', inputName, new Uint8Array(fileData));
-
-                    if (selectedFormat === 'gif') {
-                        const paletteName = 'zip_palette_' + done + '.png';
-                        await ffmpeg.run('-i', inputName, '-vf', 'fps=10,scale=320:-1:flags=lanczos,palettegen', '-y', paletteName);
-                        await ffmpeg.run('-i', inputName, '-i', paletteName, '-lavfi', 'fps=10,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse', '-y', outputName);
-                        ffmpeg.FS('unlink', paletteName);
-                    } else {
-                        await ffmpeg.run('-i', inputName, '-c:v', cfg.codec, ...cfg.opts, '-y', outputName);
-                    }
-
-                    const outputData = ffmpeg.FS('readFile', outputName);
-                    item.blob = new Blob([outputData.buffer], { type: cfg.mime });
-
-                    ffmpeg.FS('unlink', inputName);
-                    ffmpeg.FS('unlink', outputName);
-                }
-                
-                if (item.blob) {
-                    const cfg = getCodecAndOpts(selectedFormat, crf);
-                    zip.file(file.name.replace(/\.[^.]+$/, '.' + cfg.ext), item.blob);
-                    hasBlob = true;
-                    statusEl.textContent = '✅ ZIP';
-                    statusEl.className = 'status success';
-                }
-            } catch (e) {
-                console.warn('Erreur ZIP:', e);
-                statusEl.textContent = '❌ Err';
-                statusEl.className = 'status error';
-            }
-            done++;
-            updateProgress(done / files.length);
-        }
-
-        if (hasBlob) {
-            try {
-                const content = await zip.generateAsync({ type: 'blob' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(content);
-                link.download = 'videos.zip';
-                link.click();
-                showError('✅ ZIP téléchargé !');
-            } catch (e) {
-                showError('Erreur ZIP: ' + e.message);
-            }
-        } else {
-            showError('❌ Aucune vidéo convertie');
-        }
-        setProcessing(false);
-    });
-
-    function updateUI() {
-        const has = files.length > 0;
-        $('convertBtn').disabled = !has;
-        $('downloadAllBtn').disabled = !has;
-    }
-
-    function setProcessing(flag) {
-        $('convertBtn').disabled = flag || files.length === 0;
-        $('downloadAllBtn').disabled = flag || files.length === 0;
-        if (!flag) {
-            setTimeout(() => { $('progressBar').firstElementChild.style.width = '0%'; }, 500);
-        }
-    }
-
-    function updateProgress(r) {
-        const pct = Math.min(100, Math.round(r * 100));
-        $('progressBar').firstElementChild.style.width = pct + '%';
-    }
-    </script>
+    convertBtn.onclick = async () => {
+      if (!ffmpeg.isLoaded()) {
+        status.textContent = 'Chargement de FFmpeg... (cela peut prendre quelques secondes)';
+        await ffmpeg.load();
+      }
+      
+      status.textContent = 'Conversion en cours...';
+      
+      // Utilisation de l'API v0.9 (FS + run)
+      ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(file));
+      await ffmpeg.run('-i', 'input.mp4', 'output.mp4');
+      
+      const data = ffmpeg.FS('readFile', 'output.mp4');
+      
+      const blob = new Blob([data.buffer], { type: 'video/mp4' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'converti.mp4';
+      a.click();
+      
+      status.textContent = 'Terminé !';
+    };
+  </script>
 </body>
 </html>

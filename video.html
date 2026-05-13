@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Convertisseur Vidéo</title>
-  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.0/dist/ffmpeg.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
@@ -16,16 +16,11 @@
       --muted: rgba(255, 255, 255, 0.7);
     }
     @media (prefers-color-scheme: light) {
-      :root {
-        --text: #1e293b;
-        --muted: rgba(30, 41, 59, 0.6);
-      }
+      :root { --text: #1e293b; --muted: rgba(30, 41, 59, 0.6); }
       body { background: linear-gradient(135deg, #fce7f3, #e0e7ff, #c4b5fd); }
       .card { background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(255, 255, 255, 0.5); }
       #dropZone p { color: rgba(30, 41, 59, 0.8); }
-      #dropZone .icon { color: rgba(30, 41, 59, 0.6); }
       .controls label { color: rgba(30, 41, 59, 0.8); }
-      .thumb .name { color: rgba(30, 41, 59, 0.8); }
       .toggle-btn { color: rgba(30, 41, 59, 0.7); }
       .toggle-btn.selected { color: #fff; }
       footer { color: rgba(30, 41, 59, 0.6); }
@@ -33,19 +28,15 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, #1e1b4b, #312e81, #581c87);
-      color: var(--text);
-      display: flex;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 2rem 1rem;
+      color: var(--text); display: flex; justify-content: center;
+      min-height: 100vh; padding: 2rem 1rem;
     }
     .container { max-width: 700px; width: 100%; display: flex; flex-direction: column; gap: 1.5rem; align-items: center; }
     .header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
     .header-logo {
       width: 56px; height: 56px;
       background: linear-gradient(135deg, #ec4899, #8b5cf6);
-      border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
+      border-radius: 16px; display: flex; align-items: center; justify-content: center;
       box-shadow: 0 8px 24px rgba(236, 72, 153, 0.35);
     }
     .header-logo svg { width: 32px; height: 32px; color: #fff; }
@@ -63,8 +54,7 @@
       background: rgba(255, 255, 255, 0.15); border-radius: 16px;
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
       backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      padding: 2rem; width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.18); padding: 2rem; width: 100%;
     }
     #dropZone {
       border: 2px dashed rgba(255, 255, 255, 0.4); background: rgba(255, 255, 255, 0.05);
@@ -85,7 +75,6 @@
     }
     .thumb video { max-width: 100%; max-height: 100px; display: block; margin: 0 auto 0.5rem; border-radius: 6px; object-fit: cover; background: #000; }
     .thumb .name { font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(255, 255, 255, 0.8); }
-    .thumb .meta { font-size: 0.7rem; color: rgba(255, 255, 255, 0.5); margin-top: 0.2rem; }
     .thumb .status { font-size: 0.75rem; margin-top: 0.5rem; font-weight: 500; }
     .thumb .status.success { color: #4ade80; }
     .thumb .status.error { color: #f87171; }
@@ -99,8 +88,6 @@
     .controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-top: 1.5rem; }
     .controls label { color: rgba(255, 255, 255, 0.8); font-weight: 500; font-size: 0.9rem; }
     .format { display: flex; align-items: center; gap: 0.6rem; }
-    .slider { flex: 1 1 180px; }
-    .slider input { width: 100%; }
     .toggle-group {
       display: inline-flex; gap: 0.3rem; background: rgba(255,255,255,0.1);
       padding: 0.3rem; border-radius: 8px; flex-wrap: wrap;
@@ -127,13 +114,15 @@
       background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4);
       border-radius: 8px; padding: 1rem; margin-top: 1rem; color: #fca5a5; display: none;
     }
+    .info-box {
+      background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4);
+      border-radius: 8px; padding: 1rem; margin-top: 1rem; color: #93c5fd; display: none; font-size: 0.9rem;
+    }
     footer { text-align: center; font-size: 0.9rem; color: rgba(255, 255, 255, 0.7); margin-top: 2rem; }
-
     @media (max-width: 768px) {
       h1 { font-size: 1.8rem; } .card { padding: 1.5rem; }
       #dropZone { padding: 2rem 1rem; min-height: 120px; }
-      .controls { flex-direction: column; align-items: stretch; }
-      .slider { flex: 1 1 auto; } button { justify-content: center; }
+      .controls { flex-direction: column; align-items: stretch; } button { justify-content: center; }
     }
     @media (max-width: 480px) {
       h1 { font-size: 1.4rem; } .card { padding: 1rem; }
@@ -151,12 +140,10 @@
         </svg>
       </div>
       <h1>Convertisseur Vidéo</h1>
-      <p class="subtitle">Convertissez vos vidéos dans tous les formats directement dans votre navigateur.</p>
+      <p class="subtitle">Conversion par le navigateur, sans téléchargement serveur.</p>
     </div>
 
     <div class="card">
-      <div id="ffmpegStatus" style="text-align:center;padding:0.5rem;color:rgba(255,255,255,0.8);font-size:0.9rem;">Chargement de FFmpeg...</div>
-
       <div id="dropZone">
         <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-1.5-9.75l-3.75-3.75M12 18.75V4.5m0 0L7.5 9.75m4.5-5.25z" />
@@ -166,17 +153,15 @@
       </div>
 
       <div id="errorBox" class="error-box"></div>
+      <div id="infoBox" class="info-box"></div>
       <div class="gallery" id="gallery"></div>
 
       <div class="controls">
         <div class="format">
-          <label>Format :</label>
+          <label>Sortie :</label>
           <div class="toggle-group" id="formatToggle">
             <button type="button" class="toggle-btn selected" data-value="mp4">MP4</button>
             <button type="button" class="toggle-btn" data-value="webm">WebM</button>
-            <button type="button" class="toggle-btn" data-value="avi">AVI</button>
-            <button type="button" class="toggle-btn" data-value="mov">MOV</button>
-            <button type="button" class="toggle-btn" data-value="mkv">MKV</button>
             <button type="button" class="toggle-btn" data-value="gif">GIF</button>
           </div>
         </div>
@@ -188,51 +173,28 @@
       <div class="progress" id="progressBar"><div></div></div>
     </div>
 
-    <footer>© 2026 • Conversion 100% locale • FFmpeg.wasm</footer>
+    <footer>© 2026 • Conversion via API native du navigateur</footer>
   </div>
 
   <script>
     const $ = id => document.getElementById(id);
     let files = [], previews = [];
     let selectedFormat = 'mp4';
-    let ffmpeg = null;
-    let ffmpegLoaded = false;
-
-    const { createFFmpeg, fetchFile } = FFmpeg;
-    ffmpeg = createFFmpeg({
-      log: true,
-      corePath: 'https://unpkg.com/@ffmpeg/core-st@0.11.0/dist/ffmpeg-core.js'
-    });
-
-    if (ffmpeg.setProgress) {
-      ffmpeg.setProgress(({ ratio }) => {
-        const pct = Math.min(100, Math.round(ratio * 100));
-        $('progressBar').firstElementChild.style.width = pct + '%';
-      });
-    }
-
-    (async () => {
-      try {
-        $('ffmpegStatus').textContent = 'Téléchargement du moteur FFmpeg...';
-        await ffmpeg.load();
-        ffmpegLoaded = true;
-        $('ffmpegStatus').style.display = 'none';
-      } catch (err) {
-        $('ffmpegStatus').textContent = '⚠️ Échec du chargement de FFmpeg : ' + err.message;
-        console.error(err);
-      }
-    })();
 
     const dropZone = $('dropZone');
     const fileInput = $('fileInput');
+    const gallery = $('gallery');
+    const errorBox = $('errorBox');
+    const infoBox = $('infoBox');
+    const progressFill = $('progressBar').firstElementChild;
+    const convertBtn = $('convertBtn');
+    const downloadAllBtn = $('downloadAllBtn');
 
     dropZone.addEventListener('click', () => fileInput.click());
-
     dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropZone.classList.remove('dragover');
+      e.preventDefault(); dropZone.classList.remove('dragover');
       if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
     });
     fileInput.addEventListener('change', () => handleFiles(fileInput.files));
@@ -247,28 +209,32 @@
 
     $('clearBtn').addEventListener('click', () => {
       previews.forEach(p => { if (p.url) URL.revokeObjectURL(p.url); if (p.outputUrl) URL.revokeObjectURL(p.outputUrl); });
-      files = []; previews = []; $('gallery').innerHTML = ''; updateUI();
-      $('progressBar').firstElementChild.style.width = '0%';
+      files = []; previews = []; gallery.innerHTML = '';
+      convertBtn.disabled = true; downloadAllBtn.disabled = true;
+      progressFill.style.width = '0%';
     });
 
     function showError(msg) {
-      const box = $('errorBox');
-      box.textContent = msg; box.style.display = 'block';
-      setTimeout(() => { box.style.display = 'none'; }, 6000);
+      errorBox.textContent = msg; errorBox.style.display = 'block';
+      setTimeout(() => { errorBox.style.display = 'none'; }, 6000);
+    }
+    function showInfo(msg) {
+      infoBox.textContent = msg; infoBox.style.display = 'block';
+      setTimeout(() => { infoBox.style.display = 'none'; }, 4000);
     }
 
     function handleFiles(list) {
       const videos = Array.from(list);
-      if (!videos.length) { showError('❌ Aucun fichier sélectionné'); return; }
+      if (!videos.length) { showError('❌ Aucun fichier'); return; }
       videos.forEach(addFile);
-      updateUI();
+      convertBtn.disabled = false;
+      downloadAllBtn.disabled = false;
     }
 
     function addFile(file) {
       if (files.some(f => f.name === file.name && f.size === file.size)) return;
       files.push(file);
       const url = URL.createObjectURL(file);
-
       const div = document.createElement('div');
       div.className = 'thumb';
       const video = document.createElement('video');
@@ -278,154 +244,162 @@
       const status = document.createElement('div');
       status.className = 'status'; status.textContent = '⏳ En attente...';
       div.appendChild(video); div.appendChild(name); div.appendChild(status);
-      $('gallery').appendChild(div);
+      gallery.appendChild(div);
       previews.push({ file, url, element: div, statusEl: status, blob: null, outputUrl: null });
     }
 
-    function getCodec(format) {
-      const crf = '23';
-      switch (format) {
-        case 'mp4': return { ext: 'mp4', mime: 'video/mp4', args: ['-c:v', 'libx264', '-crf', crf, '-preset', 'fast'] };
-        case 'webm': return { ext: 'webm', mime: 'video/webm', args: ['-c:v', 'libvpx-vp9', '-crf', '30', '-b:v', '0', '-cpu-used', '2'] };
-        case 'avi': return { ext: 'avi', mime: 'video/x-msvideo', args: ['-c:v', 'mpeg4', '-q:v', '5'] };
-        case 'mov': return { ext: 'mov', mime: 'video/quicktime', args: ['-c:v', 'libx264', '-crf', crf, '-preset', 'fast'] };
-        case 'mkv': return { ext: 'mkv', mime: 'video/x-matroska', args: ['-c:v', 'libx264', '-crf', crf, '-preset', 'fast'] };
-        case 'gif': return { ext: 'gif', mime: 'image/gif', args: [] };
-        default: return { ext: 'mp4', mime: 'video/mp4', args: ['-c:v', 'libx264', '-crf', crf, '-preset', 'fast'] };
-      }
-    }
+    const cfgMap = {
+      mp4: { ext: 'mp4', mime: 'video/mp4', codecs: 'video/mp4;codecs=h264,aac' },
+      webm: { ext: 'webm', mime: 'video/webm', codecs: 'video/webm;codecs=vp9,opus' },
+      gif: { ext: 'gif', mime: 'image/gif' }
+    };
 
-    $('convertBtn').addEventListener('click', async () => {
+    convertBtn.addEventListener('click', async () => {
       if (!files.length) return;
-      if (!ffmpegLoaded) { showError('⏳ FFmpeg pas encore chargé.'); return; }
-      setProcessing(true);
+      convertBtn.disabled = true;
+      downloadAllBtn.disabled = true;
       let done = 0;
+      const cfg = cfgMap[selectedFormat];
 
       for (const item of previews) {
-        const { file, statusEl } = item;
+        const { file, statusEl, element } = item;
         try {
-          statusEl.textContent = '⏳ Conversion...';
+          statusEl.textContent = selectedFormat === 'gif' ? '⏳ Analyse...' : '⏳ Encodage...';
           statusEl.className = 'status processing';
-          const cfg = getCodec(selectedFormat);
-          const inputName = 'in_' + done;
-          const outputName = 'out_' + done + '.' + cfg.ext;
 
-          ffmpeg.FS('writeFile', inputName, await fetchFile(file));
+          const videoEl = document.createElement('video');
+          videoEl.muted = true;
+          videoEl.playsInline = true;
+          videoEl.crossOrigin = 'anonymous';
+          const fileUrl = URL.createObjectURL(file);
+          videoEl.src = fileUrl;
+          await new Promise((resolve, reject) => {
+            videoEl.onloadedmetadata = resolve;
+            videoEl.onerror = () => reject(new Error('Impossible de lire le fichier'));
+            setTimeout(() => reject(new Error('Timeout')), 15000);
+            videoEl.load();
+          });
+
+          const w = Math.min(720, videoEl.videoWidth || 640);
+          const h = Math.min(480, videoEl.videoHeight || 480);
+          const dur = videoEl.duration || 5;
 
           if (selectedFormat === 'gif') {
-            const pal = 'pal_' + done + '.png';
-            await ffmpeg.run('-i', inputName, '-vf', 'fps=10,scale=320:-1:flags=lanczos,palettegen', '-y', pal);
-            await ffmpeg.run('-i', inputName, '-i', pal, '-lavfi', 'fps=10,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse', '-y', outputName);
-            ffmpeg.FS('unlink', pal);
+            statusEl.textContent = '⏳ Génération GIF...';
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+
+            const gif = new GIF({
+              workers: 1,
+              quality: 10,
+              width: w,
+              height: h,
+              workerURL: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+            });
+
+            const fps = 10;
+            const total = Math.min(Math.floor(dur * fps), 100);
+            videoEl.currentTime = 0;
+
+            for (let i = 0; i < total; i++) {
+              videoEl.currentTime = i / fps;
+              await new Promise(r => { videoEl.onseeked = r; });
+              ctx.drawImage(videoEl, 0, 0, w, h);
+              gif.addFrame(ctx, { copy: true, delay: 100 / fps });
+              const pct = Math.round((i / total) * 100);
+              statusEl.textContent = `⏳ GIF ${pct}%`;
+              progressFill.style.width = pct + '%';
+            }
+
+            const gifBlob = await new Promise(r => {
+              gif.on('progress', p => {
+                statusEl.textContent = `⏳ Finalisation GIF ${Math.round(p*100)}%`;
+              });
+              gif.on('finished', r);
+              gif.render();
+            });
+
+            item.blob = gifBlob;
+            item.outputUrl = URL.createObjectURL(gifBlob);
+            const existing = element.querySelector('a');
+            if (existing) existing.remove();
+            const dl = document.createElement('a');
+            dl.href = item.outputUrl; dl.download = file.name.replace(/\.[^.]+$/, '.gif');
+            dl.textContent = '⬇️';
+            element.appendChild(dl);
+
+            const thumbVideo = element.querySelector('video');
+            thumbVideo.src = item.outputUrl;
+            thumbVideo.loop = true;
           } else {
-            await ffmpeg.run('-i', inputName, ...cfg.args, '-y', outputName);
+            statusEl.textContent = `⏳ Encodage ${cfg.ext.toUpperCase()}...`;
+            const stream = videoEl.captureStream(30);
+            const chunks = [];
+            let mimeType = cfg.codecs;
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+              mimeType = cfg.mime;
+              if (!MediaRecorder.isTypeSupported(mimeType)) {
+                throw new Error('Format ' + cfg.ext.toUpperCase() + ' non supporté par votre navigateur');
+              }
+            }
+            const recorder = new MediaRecorder(stream, { mimeType });
+            recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+
+            const recordingDone = new Promise(r => { recorder.onstop = r; });
+            recorder.start(1000);
+            videoEl.play();
+            await new Promise(r => setTimeout(r, Math.min(dur * 1000, 15000)));
+            recorder.stop();
+            videoEl.pause();
+            await recordingDone;
+
+            const blob = new Blob(chunks, { type: cfg.mime });
+            item.blob = blob;
+            item.outputUrl = URL.createObjectURL(blob);
+            const existing = element.querySelector('a');
+            if (existing) existing.remove();
+            const dl = document.createElement('a');
+            dl.href = item.outputUrl;
+            dl.download = file.name.replace(/\.[^.]+$/, '.' + cfg.ext);
+            dl.textContent = '⬇️';
+            element.appendChild(dl);
           }
 
-          const data = ffmpeg.FS('readFile', outputName);
-          const blob = new Blob([data.buffer], { type: cfg.mime });
-          ffmpeg.FS('unlink', inputName);
-          ffmpeg.FS('unlink', outputName);
-
-          item.blob = blob;
-          if (item.outputUrl) URL.revokeObjectURL(item.outputUrl);
-          item.outputUrl = URL.createObjectURL(blob);
-
-          const videoEl = item.element.querySelector('video');
-          videoEl.src = item.outputUrl;
-          videoEl.loop = selectedFormat === 'gif';
-
-          const existing = item.element.querySelector('a');
-          if (existing) existing.remove();
-
-          const dl = document.createElement('a');
-          dl.href = item.outputUrl; dl.download = file.name.replace(/\.[^.]+$/, '.' + cfg.ext);
-          dl.textContent = '⬇️'; dl.title = 'Télécharger';
-          item.element.appendChild(dl);
-
+          URL.revokeObjectURL(fileUrl);
           statusEl.textContent = '✅ OK';
           statusEl.className = 'status success';
         } catch (err) {
+          console.error(err);
           statusEl.textContent = '❌ Erreur';
           statusEl.className = 'status error';
           showError('Erreur: ' + err.message);
-          console.error(err);
         }
         done++;
-        const pct = Math.min(100, Math.round(done / files.length * 100));
-        $('progressBar').firstElementChild.style.width = pct + '%';
+        progressFill.style.width = Math.round(done / files.length * 100) + '%';
       }
-      setProcessing(false);
+      convertBtn.disabled = false;
+      downloadAllBtn.disabled = false;
     });
 
-    $('downloadAllBtn').addEventListener('click', async () => {
-      if (!files.length) return;
-      setProcessing(true);
+    downloadAllBtn.addEventListener('click', async () => {
       const zip = new JSZip();
-      let done = 0, hasBlob = false;
-
       for (const item of previews) {
-        const { file, statusEl } = item;
-        try {
-          if (!item.blob) {
-            statusEl.textContent = '⏳ Conv...';
-            statusEl.className = 'status processing';
-            if (!ffmpegLoaded) throw new Error('FFmpeg pas chargé');
-            const cfg = getCodec(selectedFormat);
-            const inputName = 'zip_in_' + done;
-            const outputName = 'zip_out_' + done + '.' + cfg.ext;
-
-            ffmpeg.FS('writeFile', inputName, await fetchFile(file));
-
-            if (selectedFormat === 'gif') {
-              const pal = 'zip_pal_' + done + '.png';
-              await ffmpeg.run('-i', inputName, '-vf', 'fps=10,scale=320:-1:flags=lanczos,palettegen', '-y', pal);
-              await ffmpeg.run('-i', inputName, '-i', pal, '-lavfi', 'fps=10,scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse', '-y', outputName);
-              ffmpeg.FS('unlink', pal);
-            } else {
-              await ffmpeg.run('-i', inputName, ...cfg.args, '-y', outputName);
-            }
-
-            const data = ffmpeg.FS('readFile', outputName);
-            item.blob = new Blob([data.buffer], { type: cfg.mime });
-            ffmpeg.FS('unlink', inputName);
-            ffmpeg.FS('unlink', outputName);
-          }
-
-          if (item.blob) {
-            const cfg = getCodec(selectedFormat);
-            zip.file(file.name.replace(/\.[^.]+$/, '.' + cfg.ext), item.blob);
-            hasBlob = true;
-            statusEl.textContent = '✅ ZIP';
-            statusEl.className = 'status success';
-          }
-        } catch (e) {
-          statusEl.textContent = '❌ Err';
-          statusEl.className = 'status error';
+        if (item.blob) {
+          const ext = cfgMap[selectedFormat].ext;
+          zip.file(item.file.name.replace(/\.[^.]+$/, '.' + ext), item.blob);
         }
-        done++;
       }
-
-      if (hasBlob) {
+      if (zip.files.length) {
         const content = await zip.generateAsync({ type: 'blob' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(content);
         link.download = 'videos.zip';
         link.click();
+        showInfo('✅ ZIP créé');
       }
-      setProcessing(false);
     });
-
-    function updateUI() {
-      const has = files.length > 0;
-      $('convertBtn').disabled = !has;
-      $('downloadAllBtn').disabled = !has;
-    }
-
-    function setProcessing(flag) {
-      $('convertBtn').disabled = flag || !files.length;
-      $('downloadAllBtn').disabled = flag || !files.length;
-      if (!flag) setTimeout(() => { $('progressBar').firstElementChild.style.width = '0%'; }, 500);
-    }
   </script>
 </body>
 </html>

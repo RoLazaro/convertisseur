@@ -79,6 +79,12 @@
     .thumb .status.success { color: #4ade80; }
     .thumb .status.error { color: #f87171; }
     .thumb .status.processing { color: #fbbf24; }
+    .thumb .remove-btn {
+      position: absolute; left: 6px; top: 6px; font-size: 0.9rem; cursor: pointer; border: none;
+      background: rgba(239, 68, 68, 0.8); color: white; width: 24px; height: 24px; display: flex;
+      align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s;
+    }
+    .thumb .remove-btn:hover { background: #dc2626; }
     .thumb a {
       position: absolute; right: 6px; top: 6px; font-size: 1.1rem; cursor: pointer; text-decoration: none;
       background: rgba(0,0,0,0.4); width: 28px; height: 28px; display: flex; align-items: center;
@@ -212,6 +218,7 @@
       files = []; previews = []; gallery.innerHTML = '';
       convertBtn.disabled = true; downloadAllBtn.disabled = true;
       progressFill.style.width = '0%';
+      fileInput.value = '';
     });
 
     function showError(msg) {
@@ -231,19 +238,44 @@
       downloadAllBtn.disabled = false;
     }
 
+    function removeFile(file, div) {
+      const idx = files.indexOf(file);
+      if (idx !== -1) files.splice(idx, 1);
+      const pIdx = previews.findIndex(p => p.file === file);
+      if (pIdx !== -1) {
+        const p = previews[pIdx];
+        if (p.url) URL.revokeObjectURL(p.url);
+        if (p.outputUrl) URL.revokeObjectURL(p.outputUrl);
+        previews.splice(pIdx, 1);
+      }
+      div.remove();
+      if (files.length === 0) {
+        convertBtn.disabled = true;
+        downloadAllBtn.disabled = true;
+        fileInput.value = '';
+        progressFill.style.width = '0%';
+      }
+    }
+
     function addFile(file) {
       if (files.some(f => f.name === file.name && f.size === file.size)) return;
       files.push(file);
       const url = URL.createObjectURL(file);
       const div = document.createElement('div');
       div.className = 'thumb';
+      
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-btn';
+      removeBtn.innerHTML = '✕';
+      removeBtn.onclick = () => removeFile(file, div);
+      
       const video = document.createElement('video');
       video.src = url; video.muted = true; video.preload = 'metadata';
       const name = document.createElement('div');
       name.className = 'name'; name.textContent = file.name;
       const status = document.createElement('div');
       status.className = 'status'; status.textContent = '⏳ En attente...';
-      div.appendChild(video); div.appendChild(name); div.appendChild(status);
+      div.appendChild(removeBtn); div.appendChild(video); div.appendChild(name); div.appendChild(status);
       gallery.appendChild(div);
       previews.push({ file, url, element: div, statusEl: status, blob: null, outputUrl: null });
     }
@@ -258,6 +290,7 @@
       if (!files.length) return;
       convertBtn.disabled = true;
       downloadAllBtn.disabled = true;
+      document.querySelectorAll('.remove-btn').forEach(btn => btn.style.display = 'none');
       let done = 0;
       const cfg = cfgMap[selectedFormat];
 

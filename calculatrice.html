@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://api.coingecko.com 'unsafe-inline';">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Position Size Calculator — Crypto</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1e2a;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --accent: #00d4aa;
+    --accent2: #f59e0b;
+    --danger: #ef4444;
+    --success: #10b981;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Sora', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  .wrapper {
+    width: 100%;
+    max-width: 780px;
+  }
+
+  header {
+    margin-bottom: 2rem;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .brand-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .brand-name {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-family: var(--sans);
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .top-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 580px) { .top-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  .card-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .field { margin-bottom: 1rem; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    font-weight: 400;
+  }
+
+  .input-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+
+  .input-wrap:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,170,0.1);
+  }
+
+  .input-wrap input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 10px 12px;
+    width: 100%;
+  }
+
+  .input-wrap .unit {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    padding: 0 12px;
+    border-left: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .sl-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-btn.active {
+    background: rgba(0,212,170,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .lever-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lever-wrap input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border2);
+    border-radius: 4px;
+    outline: none;
+  }
+
+  .lever-wrap input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+
+  .lever-val {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--accent2);
+    min-width: 40px;
+    text-align: right;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+
+  .result-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  .result-card.full { grid-column: 1 / -1; }
+
+  .result-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+
+  .result-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .result-value.accent { color: var(--accent); }
+  .result-value.warning { color: var(--accent2); }
+  .result-value.danger { color: var(--danger); }
+  .result-value.success { color: var(--success); }
+
+  .result-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .risk-bar-wrap {
+    margin-top: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+  }
+
+  .risk-bar {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--success);
+    transition: width 0.3s ease, background 0.3s;
+    width: 0%;
+  }
+
+  .warning-box {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #fca5a5;
+    margin-top: 1rem;
+    display: none;
+  }
+
+  .liq-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .liq-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    padding: 3px 0;
+  }
+
+  .liq-key { color: var(--muted); }
+  .liq-val { font-family: var(--mono); font-size: 12px; color: var(--text); }
+  .liq-val.red { color: var(--danger); }
+  .liq-val.green { color: var(--success); }
+
+  .divider { height: 1px; background: var(--border); margin: 0.75rem 0; }
+
+  footer {
+    margin-top: 1.5rem;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    font-family: var(--mono);
+  }
+
+  .tp-field { display: none; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <span class="brand-name">Position Calculator</span>
+    </div>
+    <h1>Taille de <span>position</span></h1>
+    <p class="subtitle">Crypto · Spot & Futures · Gestion du risque</p>
+  </header>
+
+  <div class="top-grid">
+    <!-- LEFT: Compte -->
+    <div>
+      <div class="card">
+        <div class="card-title">Compte</div>
+
+        <div class="field">
+          <label>Capital total</label>
+          <div class="input-wrap">
+            <input type="number" id="capital" value="10000" min="0" step="100">
+            <span class="unit">USDT</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Risque par trade</label>
+          <div class="sl-toggle" style="margin-bottom:8px;">
+            <button class="toggle-btn active" id="btn-risk-pct" onclick="setRiskMode('pct')">En %</button>
+            <button class="toggle-btn" id="btn-risk-usd" onclick="setRiskMode('usd')">En $</button>
+          </div>
+          <div id="risk-pct-input-wrap">
+            <div class="input-wrap">
+              <input type="number" id="riskPct" value="1" min="0.01" max="100" step="0.1">
+              <span class="unit">%</span>
+            </div>
+          </div>
+          <div id="risk-usd-input-wrap" style="display:none;">
+            <div class="input-wrap">
+              <input type="number" id="riskUsd" value="100" min="0.01" step="1">
+              <span class="unit">USDT</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;">
+          <div style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.18);border-radius:8px;padding:10px;">
+            <div style="font-family:var(--mono);font-size:9px;color:#f87171;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Risque</div>
+            <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:#f87171;" id="summary-risk-usd">— $</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="summary-risk-pct">—%</div>
+          </div>
+          <div style="background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.18);border-radius:8px;padding:10px;">
+            <div style="font-family:var(--mono);font-size:9px;color:#34d399;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Gain (sortie)</div>
+            <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:#34d399;" id="summary-gain-usd">— $</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="summary-gain-pct">—%</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Levier <span style="color:var(--muted);font-size:10px;">(1 = spot)</span></label>
+          <div class="lever-wrap">
+            <input type="range" id="lever" min="1" max="100" value="1" step="1">
+            <span class="lever-val" id="leverVal">×1</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Trade -->
+    <div>
+      <div class="card">
+        <div class="card-title">Trade</div>
+
+        <div class="field">
+          <label>Actif</label>
+          <div class="sl-toggle" style="margin-bottom:8px;">
+            <button class="toggle-btn active" id="btn-btc" onclick="selectAsset('bitcoin','BTC')">BTC</button>
+            <button class="toggle-btn" id="btn-eth" onclick="selectAsset('ethereum','ETH')">ETH</button>
+            <button class="toggle-btn" id="btn-sol" onclick="selectAsset('solana','SOL')">SOL</button>
+          </div>
+          <div id="price-status" style="display:flex;align-items:center;gap:6px;margin-bottom:8px;min-height:18px;">
+            <span id="price-dot" style="width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;"></span>
+            <span id="price-status-txt" style="font-family:var(--mono);font-size:10px;color:var(--muted);">Sélectionner un actif pour charger le prix</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Prix d'entrée</label>
+          <div class="input-wrap">
+            <input type="number" id="entry" value="65000" min="0" step="0.01">
+            <span class="unit" id="entry-unit">USDT</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Stop Loss — mode</label>
+          <div class="sl-toggle">
+            <button class="toggle-btn active" id="btn-price" onclick="setSLMode('price')">En prix</button>
+            <button class="toggle-btn" id="btn-pct" onclick="setSLMode('pct')">En %</button>
+          </div>
+          <div id="sl-price-wrap">
+            <div class="input-wrap">
+              <input type="number" id="slPrice" value="63000" min="0" step="0.01">
+              <span class="unit">USDT</span>
+            </div>
+          </div>
+          <div id="sl-pct-wrap" style="display:none;">
+            <div class="input-wrap">
+              <input type="number" id="slPct" value="3" min="0.01" max="100" step="0.1">
+              <span class="unit">%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Prix de sortie <span style="color:var(--muted);font-size:10px;">R/R 1:2 par défaut</span></label>
+          <div class="input-wrap">
+            <input type="number" id="exitPrice" value="69000" min="0" step="0.01">
+            <span class="unit">USDT</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Direction</label>
+          <div class="sl-toggle">
+            <button class="toggle-btn active" id="btn-long" onclick="setDir('long')">📈 Long</button>
+            <button class="toggle-btn" id="btn-short" onclick="setDir('short')">📉 Short</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM: Results full-width -->
+  <div>
+    <div class="card">
+      <div class="card-title">Résultats</div>
+
+        <div class="results-grid">
+          <div class="result-card" style="grid-column: 1 / -1;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+                  <div class="result-label" style="margin-bottom:0;">Taille de position</div>
+                  <div style="display:flex;gap:4px;">
+                    <button class="toggle-btn active" id="btn-size-units" onclick="setSizeDisplay('units')" style="padding:3px 8px;font-size:10px;">Unités</button>
+                    <button class="toggle-btn" id="btn-size-usd" onclick="setSizeDisplay('usd')" style="padding:3px 8px;font-size:10px;">USDT</button>
+                  </div>
+                </div>
+                <div class="result-sub" id="res-size-sub">unités à acheter</div>
+              </div>
+              <div class="result-value accent" id="res-size" style="font-size:28px;">—</div>
+            </div>
+          </div>
+
+          <div class="result-card">
+            <div class="result-label">Valeur notionnelle</div>
+            <div class="result-value" id="res-notional">—</div>
+            <div class="result-sub" id="res-notional-sub">USDT engagés</div>
+          </div>
+
+          <div class="result-card">
+            <div class="result-label">Montant risqué</div>
+            <div class="result-value warning" id="res-risk">—</div>
+            <div class="result-sub" id="res-risk-sub">perte max</div>
+          </div>
+
+          <div class="result-card">
+            <div class="result-label">Distance SL</div>
+            <div class="result-value" id="res-sl-dist">—</div>
+            <div class="result-sub">du prix d'entrée</div>
+          </div>
+
+          <div class="result-card">
+            <div class="result-label">Marge requise</div>
+            <div class="result-value" id="res-margin">—</div>
+            <div class="result-sub" id="res-margin-sub">avec levier ×<span id="res-lever-lbl">1</span></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem;">
+          <div id="liq-block" style="display:none;flex:1;min-width:180px;">
+            <div class="divider" style="margin-top:0;"></div>
+            <div class="liq-row">
+              <span class="liq-key">Prix de liquidation (est.)</span>
+              <span class="liq-val red" id="res-liq">—</span>
+            </div>
+            <div class="liq-row">
+              <span class="liq-key">Marge de sécurité</span>
+              <span class="liq-val" id="res-liq-margin">—</span>
+            </div>
+          </div>
+
+          <div id="exit-block" style="display:none;flex:2;min-width:260px;">
+            <div class="divider" style="margin-top:0;"></div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">P&L à la sortie</div>
+            <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
+              <div id="exit-result-card" style="border-radius:10px;padding:14px;border:1px solid;transition:all 0.2s;flex:1;min-width:160px;">
+                <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;opacity:0.7;" id="exit-label">Résultat</div>
+                <div style="font-family:var(--mono);font-size:28px;font-weight:700;letter-spacing:-0.02em;" id="exit-pnl-usd">—</div>
+                <div style="display:flex;gap:16px;margin-top:6px;">
+                  <span style="font-size:12px;opacity:0.7;" id="exit-pnl-pct-capital">—% du capital</span>
+                  <span style="font-size:12px;opacity:0.7;" id="exit-pnl-pct-pos">—% de la position</span>
+                </div>
+              </div>
+              <div style="flex:1;min-width:140px;">
+                <div class="liq-row">
+                  <span class="liq-key">Prix d'entrée</span>
+                  <span class="liq-val" id="exit-entry-display">—</span>
+                </div>
+                <div class="liq-row">
+                  <span class="liq-key">Prix de sortie</span>
+                  <span class="liq-val" id="exit-price-display">—</span>
+                </div>
+                <div class="liq-row">
+                  <span class="liq-key">Variation</span>
+                  <span class="liq-val" id="exit-move">—</span>
+                </div>
+                <div class="liq-row" style="margin-top:4px;padding-top:6px;border-top:1px solid var(--border);">
+                  <span class="liq-key">Capital après trade</span>
+                  <span style="font-family:var(--mono);font-size:13px;font-weight:500;" id="exit-capital-after">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="liq-section" style="flex:1;min-width:180px;">
+            <div class="result-label" style="margin-bottom:6px;">Risque du capital</div>
+            <div class="liq-row">
+              <span class="liq-key" id="risk-pct-lbl">1% du capital</span>
+              <span class="liq-val" id="res-risk-pct">—</span>
+            </div>
+            <div class="risk-bar-wrap">
+              <div class="risk-bar" id="risk-bar"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="warning-box" id="warning-box">
+          ⚠️ <strong>Risque élevé :</strong> vous risquez plus de 3% de votre capital sur ce trade. Réduisez votre exposition.
+        </div>
+      </div>
+    </div>
+
+  <footer>Ne constitue pas un conseil financier · Vérifiez toujours vos calculs</footer>
+</div>
+
+<script>
+  let slMode = 'price';
+  let dir = 'long';
+  let riskMode = 'pct';
+  let currentAsset = null;
+
+  const ASSETS = {
+    bitcoin: { symbol: 'BTC', btn: 'btn-btc' },
+    ethereum: { symbol: 'ETH', btn: 'btn-eth' },
+    solana: { symbol: 'SOL', btn: 'btn-sol' }
+  };
+
+  async function selectAsset(id, symbol) {
+    currentAsset = id;
+    Object.values(ASSETS).forEach(a => document.getElementById(a.btn).classList.remove('active'));
+    document.getElementById(ASSETS[id].btn).classList.add('active');
+
+    const dot = document.getElementById('price-dot');
+    const txt = document.getElementById('price-status-txt');
+    dot.style.background = '#f59e0b';
+    dot.style.animation = 'pulse 1s infinite';
+    txt.textContent = 'Chargement du cours ' + symbol + '...';
+
+    try {
+      const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + id + '&vs_currencies=usd');
+      const data = await res.json();
+      const price = data[id]?.usd;
+      if (!price) throw new Error('Prix indisponible');
+
+      document.getElementById('entry').value = price;
+      dot.style.background = '#10b981';
+      dot.style.animation = '';
+      const now = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      txt.textContent = symbol + ' · ' + price.toLocaleString('fr-FR') + ' $ · mis à jour ' + now;
+      calc();
+    } catch(e) {
+      dot.style.background = '#ef4444';
+      dot.style.animation = '';
+      txt.textContent = 'Erreur de chargement — vérifiez votre connexion';
+    }
+  }
+
+  function setRiskMode(m) {
+    riskMode = m;
+    document.getElementById('risk-pct-input-wrap').style.display = m === 'pct' ? '' : 'none';
+    document.getElementById('risk-usd-input-wrap').style.display = m === 'usd' ? '' : 'none';
+    document.getElementById('btn-risk-pct').classList.toggle('active', m === 'pct');
+    document.getElementById('btn-risk-usd').classList.toggle('active', m === 'usd');
+    calc();
+  }
+
+  function setSLMode(m) {
+    slMode = m;
+    document.getElementById('sl-price-wrap').style.display = m === 'price' ? '' : 'none';
+    document.getElementById('sl-pct-wrap').style.display = m === 'pct' ? '' : 'none';
+    document.getElementById('btn-price').classList.toggle('active', m === 'price');
+    document.getElementById('btn-pct').classList.toggle('active', m === 'pct');
+    calc();
+  }
+
+  function setDir(d) {
+    dir = d;
+    document.getElementById('btn-long').classList.toggle('active', d === 'long');
+    document.getElementById('btn-short').classList.toggle('active', d === 'short');
+    calc();
+  }
+
+  let sizeDisplay = 'units';
+  let userEditedExit = false;
+
+  function setSizeDisplay(mode) {
+    sizeDisplay = mode;
+    document.getElementById('btn-size-units').classList.toggle('active', mode === 'units');
+    document.getElementById('btn-size-usd').classList.toggle('active', mode === 'usd');
+    updateSizeDisplay();
+  }
+
+  function updateSizeDisplay() {
+    const s = window._posSize, v = window._posValue;
+    if (s === undefined) return;
+    if (sizeDisplay === 'units') {
+      document.getElementById('res-size').textContent = fmt(s, 4) + ' unités';
+      document.getElementById('res-size-sub').textContent = 'quantité à acheter';
+    } else {
+      document.getElementById('res-size').textContent = fmt(v) + ' $';
+      document.getElementById('res-size-sub').textContent = 'valeur totale engagée';
+    }
+  }
+
+  function setExit(on) {}  // kept for compatibility, no-op
+
+  document.getElementById('lever').addEventListener('input', function() {
+    document.getElementById('leverVal').textContent = '×' + this.value;
+    calc();
+  });
+
+  // Mark exit as manually edited only when user types directly in that field
+  document.getElementById('exitPrice').addEventListener('input', function() {
+    userEditedExit = true;
+    calc();
+  });
+
+  // Reset userEditedExit when entry or SL changes so auto R/R kicks in again
+  ['entry','slPrice','slPct'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', function() {
+      userEditedExit = false;
+      calc();
+    });
+  });
+
+  document.querySelectorAll('input[type=number]').forEach(el => {
+    if (!['exitPrice','entry','slPrice','slPct'].includes(el.id)) {
+      el.addEventListener('input', calc);
+    }
+  });
+
+  function fmt(n, dec=2) {
+    if (isNaN(n) || !isFinite(n)) return '—';
+    return n.toLocaleString('fr-FR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  }
+
+  function calc() {
+    const capital = parseFloat(document.getElementById('capital').value) || 0;
+    const entry = parseFloat(document.getElementById('entry').value) || 0;
+    const lever = parseInt(document.getElementById('lever').value) || 1;
+
+    let riskAmount, riskPct;
+    if (riskMode === 'pct') {
+      riskPct = parseFloat(document.getElementById('riskPct').value) || 0;
+      riskAmount = capital * riskPct / 100;
+    } else {
+      riskAmount = parseFloat(document.getElementById('riskUsd').value) || 0;
+      riskPct = capital > 0 ? riskAmount / capital * 100 : 0;
+    }
+
+    if (!capital || !riskAmount || !entry) return;
+
+    document.getElementById('summary-risk-usd').textContent = '−' + fmt(riskAmount) + ' $';
+    document.getElementById('summary-risk-pct').textContent = fmt(riskPct, 2) + '% du capital';
+
+    let slPriceVal;
+    if (slMode === 'price') {
+      slPriceVal = parseFloat(document.getElementById('slPrice').value) || 0;
+    } else {
+      const slPctV = parseFloat(document.getElementById('slPct').value) || 0;
+      slPriceVal = dir === 'long'
+        ? entry * (1 - slPctV / 100)
+        : entry * (1 + slPctV / 100);
+    }
+
+    if (!slPriceVal) return;
+
+    const slDist = Math.abs(entry - slPriceVal);
+    const slPctCalc = slDist / entry * 100;
+
+    if (slDist <= 0) return;
+
+    // Auto-set exit to R/R 1:2 if not manually edited
+    const exitEl = document.getElementById('exitPrice');
+    if (!userEditedExit) {
+      const autoExit = dir === 'long' ? entry + slDist * 2 : entry - slDist * 2;
+      exitEl.value = parseFloat(autoExit.toFixed(2));
+    }
+
+    const positionValue = (riskAmount / slPctCalc) * 100 * lever;
+    const positionSize = positionValue / entry;
+    const margin = positionValue / lever;
+
+    window._posSize = positionSize;
+    window._posValue = positionValue;
+    updateSizeDisplay();
+
+    document.getElementById('res-notional').textContent = fmt(positionValue) + ' $';
+    document.getElementById('res-risk').textContent = fmt(riskAmount) + ' $';
+    document.getElementById('res-sl-dist').textContent = fmt(slPctCalc, 2) + '%';
+    document.getElementById('res-margin').textContent = fmt(margin) + ' $';
+    document.getElementById('res-lever-lbl').textContent = lever;
+    document.getElementById('res-risk-pct').textContent = fmt(riskPct, 2) + '% = ' + fmt(riskAmount) + ' $';
+    document.getElementById('risk-pct-lbl').textContent = fmt(riskPct, 2) + '% du capital';
+
+    const bar = document.getElementById('risk-bar');
+    const barW = Math.min(riskPct / 5 * 100, 100);
+    bar.style.width = barW + '%';
+    bar.style.background = riskPct <= 1 ? '#10b981' : riskPct <= 2 ? '#f59e0b' : '#ef4444';
+
+    document.getElementById('warning-box').style.display = riskPct > 3 ? '' : 'none';
+
+    if (lever > 1) {
+      document.getElementById('liq-block').style.display = '';
+      const liqDist = 1 / lever;
+      const liqPrice = dir === 'long'
+        ? entry * (1 - liqDist)
+        : entry * (1 + liqDist);
+      const liqMarginPct = Math.abs(liqPrice - slPriceVal) / entry * 100;
+      document.getElementById('res-liq').textContent = fmt(liqPrice) + ' $';
+      document.getElementById('res-liq-margin').textContent = fmt(liqMarginPct, 2) + '% du SL';
+    } else {
+      document.getElementById('liq-block').style.display = 'none';
+    }
+
+    const exitP = parseFloat(document.getElementById('exitPrice').value) || 0;
+    if (exitP && positionSize > 0) {
+      document.getElementById('exit-block').style.display = '';
+
+      const priceDiff = dir === 'long' ? exitP - entry : entry - exitP;
+      const pnl = positionSize * priceDiff;
+      const pnlPctCapital = capital > 0 ? pnl / capital * 100 : 0;
+      const pnlPctPos = entry > 0 ? priceDiff / entry * 100 : 0;
+      const isWin = pnl >= 0;
+      const rr = riskAmount > 0 ? Math.abs(pnl) / riskAmount : 0;
+
+      document.getElementById('summary-gain-usd').textContent = (isWin ? '+' : '') + fmt(pnl) + ' $';
+      document.getElementById('summary-gain-pct').textContent = (isWin ? '+' : '') + fmt(pnlPctCapital, 2) + '% · R/R 1:' + fmt(rr, 2);
+      document.getElementById('summary-gain-usd').style.color = isWin ? '#34d399' : '#f87171';
+
+      const card = document.getElementById('exit-result-card');
+      card.style.background = isWin ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)';
+      card.style.borderColor = isWin ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)';
+
+      const color = isWin ? '#34d399' : '#f87171';
+      document.getElementById('exit-label').style.color = color;
+      document.getElementById('exit-label').textContent = isWin ? 'Trade gagnant ✓' : 'Trade perdant ✗';
+      document.getElementById('exit-pnl-usd').style.color = color;
+      document.getElementById('exit-pnl-usd').textContent = (isWin ? '+' : '') + fmt(pnl) + ' $';
+      document.getElementById('exit-pnl-pct-capital').textContent = (isWin ? '+' : '') + fmt(pnlPctCapital, 2) + '% du capital';
+      document.getElementById('exit-pnl-pct-pos').textContent = 'R/R 1:' + fmt(rr, 2);
+      document.getElementById('exit-entry-display').textContent = fmt(entry) + ' $';
+      document.getElementById('exit-price-display').style.color = color;
+      document.getElementById('exit-price-display').textContent = fmt(exitP) + ' $';
+      document.getElementById('exit-move').style.color = color;
+      document.getElementById('exit-move').textContent = (priceDiff >= 0 ? '+' : '') + fmt(priceDiff) + ' $ (' + (priceDiff >= 0 ? '+' : '') + fmt(pnlPctPos, 2) + '%)';
+      const capitalAfter = capital + pnl;
+      document.getElementById('exit-capital-after').style.color = isWin ? '#34d399' : '#f87171';
+      document.getElementById('exit-capital-after').textContent = fmt(capitalAfter) + ' $';
+    }
+  }
+
+  calc();
+</script>
+</body>
+</html>
